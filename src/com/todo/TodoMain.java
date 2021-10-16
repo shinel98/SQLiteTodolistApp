@@ -13,11 +13,12 @@ public class TodoMain {
 	
 		Scanner sc = new Scanner(System.in);
 		TodoList l = new TodoList();
-		//l.importData("todolist.txt");
+		//l.importData("todolist.txt"); // 파일에 있는 내용을 데이터베이스로 옮기는 메소드  
+		//TodoUtil.checkDays(l);
 		boolean isList = false;
 		boolean quit = false;
 		
-		//TodoUtil.loadList(l, "todolist.txt");
+		//TodoUtil.loadList(l, "todolist.txt"); 파일에 저장 하는 메소드 
 		
 		Menu.displaymenu();
 		do {
@@ -87,6 +88,18 @@ public class TodoMain {
 				 
 			case "ls_comp":
 				TodoUtil.listAll(l, 1);
+				break;
+			
+			case "ls_w":
+				TodoUtil.checkDays(l);
+				break;
+				
+			case "find_wd":
+				TodoUtil.listWeekdays(l,choices[1]);
+				break;
+		
+			case "del_pst":
+				TodoUtil.overDelete(l);
 				break;
 				
 			case "exit":

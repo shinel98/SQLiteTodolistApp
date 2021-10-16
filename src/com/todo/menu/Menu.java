@@ -17,7 +17,10 @@ public class Menu {
         System.out.println("11. 등록되어 있는 카테고리 출력 ( ls_cate )");
         System.out.println("12. 항목 완료 ( comp <번호> )");
         System.out.println("13. 완료된 항목 출력 ( ls_comp )");
-        System.out.println("14. 종료 ( exit )");
+        System.out.println("14. 일주일 안에 해야할 일 출력 ( ls_w )");
+        System.out.println("15. 요일 별 출력 ( find_wd <요일> )");
+        System.out.println("16. 기한 지난 일정들 삭제 ( del_pst )");
+        System.out.println("17. 종료 ( exit )");
         //System.out.println("Enter your choice >");
         
     }

@@ -13,6 +13,8 @@ public class TodoItem {
     private String due_date;
     private int index;
     private boolean is_completed;
+    private boolean next_seven_days;
+    private String weekdays;
 
     // TodoItem의 title, desc, date를 초기화해주는 생성자 
     public TodoItem(String title, String desc){
@@ -40,6 +42,16 @@ public class TodoItem {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  kk:mm:ss");
         this.current_date = sdf.format(new Date());
         this.is_completed = is_completed;
+    }
+    public TodoItem(String title, String desc, String category, String due_date, String weekdays){
+        this.title=title;
+        this.desc=desc;
+        //this.current_date=new Date();
+        this.category = category;
+        this.due_date = due_date;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  kk:mm:ss");
+        this.current_date = sdf.format(new Date());
+        this.weekdays = weekdays;
     }
     
     public TodoItem(String strFromFile){
@@ -99,17 +111,29 @@ public class TodoItem {
 	public void setDue_date(String due_date) {
 		this.due_date = due_date;
 	}
+
+	public boolean isNext_seven_days() {
+		return next_seven_days;
+	}
+	public void setNext_seven_days(boolean next_seven_days) {
+		this.next_seven_days = next_seven_days;
+	}
+	public String getWeekdays() {
+		return weekdays;
+	}
+	public void setWeekdays(String weekdays) {
+		this.weekdays = weekdays;
+	}
 	public String toSaveString() {
     	return category + "##" + title + "##" + desc + "##" + due_date + "##" +current_date + "\n";
     }
 	@Override
 	public String toString() {
 		if(is_completed == true)
-			return "[" + category + "]" + " " + title + "[V]" + " - " +desc +  " - " +due_date + " - " + current_date;
+			return "[" + category + "]" + " " + title + "[V]" + " - " +desc +  " - " + current_date + "-" + due_date + "(" + weekdays +")";
 		else 
-			return "[" + category + "]" + " " + title + " - " +desc +  " - " +due_date + " - " + current_date;
+			return "[" + category + "]" + " " + title + " - " +desc +  " - "  + current_date + "-" + due_date + "(" + weekdays +")";
 	}
-	
     
 }
 

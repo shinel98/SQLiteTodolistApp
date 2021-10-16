@@ -31,8 +31,8 @@ public class TodoList {
 
 	public int addItem(TodoItem t) {
 		list.add(t); 
-		String sql = "insert into list (title, memo, category, current_date, due_date)" + 
-				"values (?,?,?,?,?);";
+		String sql = "insert into list (title, memo, category, current_date, due_date, weekdays)" + 
+				"values (?,?,?,?,?,?);";
 		int count = 0;
 		PreparedStatement pstm;
 		try {
@@ -42,6 +42,7 @@ public class TodoList {
 			pstm.setString(3, t.getCategory());
 			pstm.setString(4, t.getCurrent_date());
 			pstm.setString(5, t.getDue_date());
+			pstm.setString(6, t.getWeekdays());
 			count = pstm.executeUpdate();
 			pstm.close();
 		} catch (SQLException e) {
@@ -69,17 +70,20 @@ public class TodoList {
 	}
 
 	public int updateItem(TodoItem t) {
-		String sql = "update list set title = ?, memo = ?, category = ?, current_date = ?, due_date = ? where id = ?;";
+		
 		PreparedStatement  pstm;
 		int count = 0;
 		try {
+			String sql = "update list set title = ?, memo = ?, category = ?, current_date = ?, due_date = ?, weekdays = ?"
+					+ " where id = ?;";
 			pstm = conn.prepareStatement(sql);
 			pstm.setString(1, t.getTitle());
 			pstm.setString(2, t.getDesc());
 			pstm.setString(3, t.getCategory());
 			pstm.setString(4, t.getCurrent_date());
 			pstm.setString(5, t.getDue_date());
-			pstm.setInt(6, t.getIndex());
+			pstm.setString(6, t.getWeekdays());
+			pstm.setInt(7, t.getIndex());
 			count = pstm.executeUpdate();
 			pstm.close();
 		} catch (SQLException e) {
@@ -109,10 +113,13 @@ public class TodoList {
 				String category = rs.getString("category");
 				String current_date = rs.getString("current_date");
 				String due_date = rs.getString("due_date");
+				String weekdays = rs.getString("weekdays");
 				boolean is_completed = rs.getBoolean("is_completed");
+				
 				TodoItem item = new TodoItem(title, memo, category, due_date, is_completed);
 				item.setIndex(id);
 				item.setCurrent_date(current_date);
+				item.setWeekdays(weekdays);
 				list.add(item);
 			}
 			stmt.close();
@@ -203,9 +210,13 @@ public class TodoList {
 				String category = rs.getString("category");
 				String current_date = rs.getString("current_date");
 				String due_date = rs.getString("due_date");
+				boolean is_completed = rs.getBoolean("is_completed");
+				String weekdays = rs.getString("weekdays");
 				TodoItem item = new TodoItem(title, memo, category, due_date);
 				item.setIndex(id);
 				item.setCurrent_date(current_date);
+				item.setIs_completed(is_completed);
+				item.setWeekdays(weekdays);
 				list.add(item);			
 			}
 			pstm.close();
@@ -244,14 +255,14 @@ public class TodoList {
 		return list.indexOf(t);
 	}
 
-	public Boolean isDuplicate(String title) {
+	/*public Boolean isDuplicate(String title) {
 		PreparedStatement pstm;
 		try {
-			String sql = "select count(id) from list where title = ?";
+			String sql = "select count(title) from list where title = ?";
 			pstm = conn.prepareStatement(sql);
 			pstm.setString(1, title);
 			ResultSet rs = pstm.executeQuery();
-			if(rs.next())
+			if(rs.next())	
 				return true;
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -259,7 +270,14 @@ public class TodoList {
 		}
 		return false;
 	}
-	
+	*/
+	public Boolean isDuplicate(String title) {
+		for(TodoItem i : list) {
+			if(title.equals(i.getTitle())) 
+				return true;
+		}
+		return false;
+	}
 	public void importData(String filename) {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -357,6 +375,78 @@ public class TodoList {
 				TodoItem item = new TodoItem(title, memo, category, due_date, is_completed);
 				item.setIndex(id);
 				item.setCurrent_date(current_date);
+				list.add(item);
+			}
+			pstm.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+	public void checkDays(int id) {
+		PreparedStatement pstm;
+		try {
+			String sql = "update list set next_seven_days = 1 where id = ?";
+			pstm = conn.prepareStatement(sql);
+			pstm.setInt(1, id);
+			pstm.executeUpdate();
+			pstm.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public ArrayList<TodoItem> getWeekList(int num){
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		PreparedStatement pstm;
+		try {
+			String sql = "select * from list where next_seven_days = ?";
+			pstm = conn.prepareStatement(sql);
+			pstm.setInt(1, num);
+			ResultSet rs = pstm.executeQuery();
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String title = rs.getString("title");
+				String memo = rs.getString("memo");
+				String category = rs.getString("category");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				boolean is_completed = rs.getBoolean("is_completed");
+				String weekdays = rs.getString("weekdays");
+				TodoItem item = new TodoItem(title, memo, category, due_date, is_completed);
+				item.setIndex(id);
+				item.setCurrent_date(current_date);
+				item.setWeekdays(weekdays);
+				list.add(item);
+			}
+			pstm.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+	public ArrayList<TodoItem> getWeekdays(String weekdays){
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		PreparedStatement pstm;
+		try {
+			String sql = "select * from list where weekdays = ?";
+			pstm = conn.prepareStatement(sql);
+			pstm.setString(1, weekdays);
+			ResultSet rs = pstm.executeQuery();
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String title = rs.getString("title");
+				String memo = rs.getString("memo");
+				String category = rs.getString("category");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				boolean is_completed = rs.getBoolean("is_completed");
+				TodoItem item = new TodoItem(title, memo, category, due_date, is_completed);
+				item.setIndex(id);
+				item.setCurrent_date(current_date);
+				item.setWeekdays(weekdays);
 				list.add(item);
 			}
 			pstm.close();

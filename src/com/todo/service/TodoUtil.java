@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.time.LocalDate;
 import java.util.*;
 
 import com.todo.dao.TodoItem;
@@ -16,18 +17,18 @@ public class TodoUtil {
 	public static void createItem(TodoList list) {
 		
 		String title, desc;
-		String category, due_date;
+		String category, due_date, weekdays;
 		Scanner sc = new Scanner(System.in);
 		
 		
 		System.out.println("\n" + "========== 새로운 할일 작성\n");
 		
-		System.out.println("카테고리를 입력해주세요.");
+		System.out.println("카테고리>");
 		category = sc.next().trim();
 		sc.nextLine();
 	
 		
-		System.out.println("항목을 입력해주세요.");
+		System.out.println("항목>");
 		
 		//title = sc.next();
 		title = sc.nextLine();
@@ -37,16 +38,21 @@ public class TodoUtil {
 			return;
 		}
 		
-		System.out.println("내용을 입력해주세요.");
+		System.out.println("내용>");
 		//desc = sc.next();
 		desc = sc.nextLine();
 		
-		System.out.println("마감일을 입력해주세요.");
+		System.out.println("마감일>");
 		due_date = sc.nextLine().trim();
 		
-		TodoItem t = new TodoItem(title, desc, category, due_date);
+		System.out.println("요일>");
+		weekdays = sc.nextLine();
+		
+		TodoItem t = new TodoItem(title, desc, category, due_date, weekdays);
 		if(list.addItem(t)>0)
 			System.out.println("추가되었습니다.");
+		
+
 	}
 	// list 를 파라미터로 받고 user가 title 을 입력하면, list에 있는 title과 일치하면 리스트에서 삭제해주는 메소드 
 	public static void deleteItem(TodoList l) {
@@ -65,16 +71,21 @@ public class TodoUtil {
 			}
 		}*/
 		int num = sc.nextInt();
-		TodoItem it = l.getList().get(num-1);
-		System.out.printf("%d. " + it + "\n", num);
-		System.out.println("위 항목을 삭제하시겠습니까? (y/n) > ");
-		String choice = sc.next();
-		/*
-		 * sc.nextLine()으로 했을때는 왜 제대로 작동이 안하는 걸까??
-		 */
-		if(choice.equals("y")) {
-			if((l.deleteItem(it.getIndex())>0))
-				System.out.println("삭제되었습니다!");
+		try {
+			TodoItem it = l.getList().get(num-1);
+			System.out.printf("%d. " + it + "\n", num);
+			System.out.println("위 항목을 삭제하시겠습니까? (y/n) > ");
+			String choice = sc.next();
+			
+			/*
+			 * sc.nextLine()으로 했을때는 왜 제대로 작동이 안하는 걸까??
+			 */
+			if(choice.equals("y")) {
+				if((l.deleteItem(it.getIndex())>0))
+					System.out.println("삭제되었습니다!");
+			}
+		} catch (IndexOutOfBoundsException e) {
+			System.out.println("삭제할 내용이 없습니다.");
 		}
 	}
 
@@ -113,6 +124,8 @@ public class TodoUtil {
 		System.out.println("새로운 마감일을 입력해주세요. ");
 		String new_due_date = sc.nextLine().trim();
 		
+		System.out.println("새로운 요일(마감일)을 입력해주세요. ");
+		String new_weekdays = sc.nextLine().trim();
 		/*for (TodoItem item : l.getList()) {
 			if (item.getTitle().equals(title)) {
 				l.deleteItem(item);
@@ -124,6 +137,7 @@ public class TodoUtil {
 		//l.deleteItem(it.getIndex());
 		TodoItem t = new TodoItem(new_title, new_description, new_category, new_due_date);
 		t.setIndex(id);
+		t.setWeekdays(new_weekdays);
 		if(l.updateItem(t) > 0)
 			System.out.println("수정되었습니다.");
 	}
@@ -132,9 +146,11 @@ public class TodoUtil {
 		/*if(l.isEmpty()) {
 			System.out.println("저장된 내용이 없습니다.");
 		}*/
+		int count=1;
 		System.out.printf("[전체 목록, 총 %d개]\n", l.getList().size());
 		for (TodoItem item : l.getList()) {
-			System.out.println(item.toString());
+			System.out.println(count + ". " + item.toString());
+			count++;
 		}
 	}
 	
@@ -236,5 +252,72 @@ public class TodoUtil {
 			count++;
 		}
 		System.out.printf("총 %d개의 항목이 완료되었습니다.\n", count);
+	}
+	/* 일주일 안에 해야될 일들이 무엇인지 계산해주는 메소드 */
+	public static void checkDays(TodoList l) {
+		for(TodoItem i : l.getList()) {
+			// todoitem 들의 due_date의 연,월,날짜를 parsing 해서 연월이 같고 due_date의 날짜와 내 localtime 날짜의 차이가 7보다 작으면 next_sevend_days column check
+				// due_date 를 가져와서 / 기준으로 연 월 일 parsing 	
+			StringTokenizer st = new StringTokenizer(i.getDue_date(), "/");
+			String year = st.nextToken();
+			String month = st.nextToken();
+			String day = st.nextToken();
+			LocalDate now = LocalDate.now();
+			int year_now = now.getYear();
+			int month_now = now.getMonthValue();
+			int day_now = now.getDayOfMonth();
+			if((Integer.valueOf(year).equals(year_now)) 
+				&& (Integer.valueOf(month).equals(month_now))
+				&& (Integer.valueOf(day) - day_now <= 7)) {
+				l.checkDays(i.getIndex());
+			}
+		}
+		TodoUtil.listWeek(l);
+	}
+	/* 일주일 안에 해야될 일들을 출력해주는 메소드 */
+	public static void listWeek(TodoList l) {
+		// next_seven_days 가 1인 얘들만 Read 하는 query 문 작성
+		int count = 0;
+		for(TodoItem i : l.getWeekList(1)) {
+			System.out.println(count+1  + ". " + i.toString());
+			count++;
+		}
+		System.out.printf("일주일 안에 총 %d개의 일을 해야 합니다.\n", count);
+	}
+	/* 요일별 해야할 일들을 출력해주는 메소드 */
+	public static void listWeekdays(TodoList l, String weekdays) {
+		int count = 0;
+		for(TodoItem i : l.getWeekdays(weekdays)) {
+			System.out.println(count+1 + ". " + i.toString());
+			count++;
+		}
+		System.out.println(weekdays + "에는 총 " + count + " 개의 일을 해야합니다.");
+	}
+	
+    // due_date 지난 건 리스트에서 삭제할 수 있게끔 해주는 기능 
+	public static void overDelete(TodoList l) {
+		int count = 0;
+		for(TodoItem i : l.getList()) {
+			StringTokenizer st = new StringTokenizer(i.getDue_date(), "/");
+			String year = st.nextToken();
+			String month = st.nextToken();
+			String day = st.nextToken();
+			LocalDate now = LocalDate.now();
+			int year_now = now.getYear();
+			int month_now = now.getMonthValue();
+			int day_now = now.getDayOfMonth();
+			if((Integer.valueOf(year).equals(year_now)) 
+					&& (Integer.valueOf(month).equals(month_now))
+					&& (Integer.valueOf(day) - day_now < 0)) {
+				if((l.deleteItem(i.getIndex())>0)) {
+					System.out.println("삭제되었습니다!");
+					count++;
+				}
+			}
+		}
+		if(count == 0)
+			System.out.println("삭제할 항목이 없습니다");
+		else 
+			System.out.println("총 " + count + "개 의 항목이 삭제되었습니다.");
 	}	
 }
